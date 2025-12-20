@@ -6,14 +6,38 @@ jobs:
   build-for-o1s:
     runs-on: ubuntu-latest
     steps:
-      - name: Setting up build directories
+    - name: Adding the repo binary to $PATH
         run: |
-          mkdir ~/bin
+          export PATH=$PATH:~/bin
           mkdir -p ~/android/lineage
           cd ~/android/lineage
-          
-      - name: Installing dependencies
+
+          - name: Installing the "repo" Tool
         run: |
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          
+          - name: Authenticating "repo" with GitHub account
+          run: |
+          git config --global user.email "lovaren@gmail.com"
+          git config --global user.name "Kristoffer Grundström"
+
+           - name: Setting up a local repo
+           run: |
+          ~/bin/repo init -u https://github.com/LineageOS/android.git -b lineage-22.1 --git-lfs --depth=1
+          
+          - name: Enabling caching
+          run: |
+          export USE_CCACHE=1
+          export CCACHE_EXEC=/usr/bin/ccache
+          ccache -M 25G
+          
+          - name: Syncing sources
+          run: |
+          ~/bin/repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+
+          - name: Installing dependencies
+          run: |
           sudo apt-get install bc bison build-essential ccache curl flex g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick protobuf-compiler python3-protobuf lib32readline-dev lib32z1-dev libdw-dev libelf-dev libgnutls28-dev lz4 libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
           wget https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2_amd64.deb
           sudo dpkg -i libtinfo5_6.3-2_amd64.deb
@@ -21,30 +45,9 @@ jobs:
           wget https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2_amd64.deb
           sudo dpkg -i libncurses5_6.3-2_amd64.deb
           rm -f libncurses5_6.3-2_amd64.deb
-          
-      - name: Installing the "repo" Tool
-        run: |
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          
-      - name: Authenticating "repo" with GitHub account
-        run: |
-          git config --global user.email "lovaren@gmail.com"
-          git config --global user.name "Kristoffer Grundström"
-          
-      - name: Enabling caching (not sure)
-        run: |
-          export USE_CCACHE=1
-          export CCACHE_EXEC=/usr/bin/ccache
-          ccache -M 25G
-          
-      - name: Setting up a local repo
-        run: |
-          ~/bin/repo init -u https://github.com/LineageOS/android.git -b lineage-22.1 --git-lfs
-          ~/bin/repo sync
-          
-      - name: Setting up build environment
-        run: |
+
+          - name: Setting up the build environment
+          run: |
             cd ~/android/lineage
             mkdir -p device/samsung/o1s kernel/samsung/o1s vendor/samsung/o1s
             git clone https://github.com/exynos-republic/android_device_samsung_universal2100-common -b lineage-22.1 device/samsung/universal2100-common
@@ -64,21 +67,21 @@ jobs:
             source build/envsetup.sh
             lunch lineage_o1s-userdebug
           
-      - name: Starting build process
-        run: |
+          - name: Starting build process
+          run: |
           croot && mka bacon
-      
-      - name: Get current time
-        uses: srfrnk/current-time@master
-        id: current-time
-        with:
+          
+          - name: Get current time
+          uses: srfrnk/current-time@master
+          id: current-time
+          with:
           format: YYYY-MM-DD
-      
-      - name: Uploading build to Releases
-        uses: softprops/action-gh-release@v1
-        with:
+          
+          - name: Adding the build to Releases
+          uses: softprops/action-gh-release@v1
+          with:
           name: "Auto Build ${{ steps.current-time.outputs.formattedTime }}"
-          tag_name: v1.0
+          tag_name: 0.01
           prerelease: false
           body: |
             This is an automatic release by GitHub Actions.
