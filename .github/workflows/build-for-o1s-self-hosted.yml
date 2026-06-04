@@ -53,7 +53,7 @@ jobs:
     - name: Syncing sources
       run: |
         cd ~/android/lineage
-        ~/bin/repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --force-remove-checkout --no-tags --depth=1
+        ~/bin/repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
     # 7. Clone the necessary repos for this device, source and build in the same step
     - name: Setting up build environment and starting build
