@@ -84,23 +84,24 @@ jobs:
         # Start the build
         mka bacon
 
-    - name: Get current time
+    - name: Get current date
       uses: srfrnk/current-time@master
       id: current-time
       with:
         format: YYYY-MM-DD
 
     - name: Adding the build to Releases
+      if: success()
       uses: softprops/action-gh-release@v1
       with:
         name: "Auto Build ${{ steps.current-time.outputs.formattedTime }}"
-        tag_name: "0.01"
-        prerelease: false
+        tag_name: "nightly-${{ steps.current-time.outputs.formattedTime }}"
+        prerelease: true
         body: |
-          This is an automatic release by GitHub Actions.
-        # Tips: Eftersom $OUT försvinner mellan steg, använd den explicita sökvägen till out-mappen här
+          Nightly build for ${{ steps.current-time.outputs.formattedTime }}
+
         files: |
           /home/runner/android/lineage/out/target/product/o1s/recovery.img
-          /home/runner/android/lineage/out/target/product/o1s/lineage-*-o1s.zip
+          /home/runner/android/lineage/out/target/product/o1s/lineage-22.1-${{ steps.current-time.outputs.formattedTime }}-nightly-o1s-signed.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
